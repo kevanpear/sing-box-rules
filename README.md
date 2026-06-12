@@ -22,30 +22,33 @@
 sing-box rule-set compile source/geosite_openai.json -o srs/geosite_openai.srs
 ```
 
-## 本地更新（手动，按需）
+## 更新流程（公开+远程方案）
 
-域名很少变，不设定时器。改完规则 push 后（或想拉取最新时），在本机跑一次：
-```bash
-~/sing-box-rules/sync-local.sh
-```
-脚本会：经代理 `git fetch` → 若有更新则把 `srs/*.srs` 同步到 `/var/lib/sing-box/`
-→ 仅当文件确有变化时 `systemctl restart sing-box`。无变化时是 no-op。
+改完 `source/*.json` → push → GitHub Action 自动编译出新 `srs/*.srs` →
+客户端按 `update_interval`（默认 1d）自动拉取。整个过程无需在本机手动操作。
+
+> `sync-local.sh` 是私有/本地方案的遗留脚本，公开+远程方案下不需要它。
 
 ## 客户端引用方式（sing-box 配置 route.rule_set）
 
-本仓库是**私有**的，而 sing-box 远程规则集只支持 `url/download_detour/update_interval`、**不支持认证头**，
-所以无法让 sing-box 直接拉私有 raw。改为「本机 `sync-local.sh` 拉取 → sing-box 按 `local` 加载」：
+本仓库为 **public**，sing-box 可直接远程拉取 raw（免鉴权）：
 
 ```json
 {
-  "type": "local",
+  "type": "remote",
   "tag": "geosite_openai",
   "format": "binary",
-  "path": "/var/lib/sing-box/geosite_openai.srs"
+  "url": "https://raw.githubusercontent.com/kevanpear/sing-box-rules/master/srs/geosite_openai.srs",
+  "download_detour": "proxy",
+  "update_interval": "1d"
 }
 ```
 
-更新由 `sync-local.sh` 负责（见下）。这样规则全程私有、不受 GFW 对 GitHub raw 的干扰。
+- `download_detour: proxy` — 经代理出口下载，绕开 GFW 对 `raw.githubusercontent.com` 的干扰。
+- 建议同时启用 `experimental.cache_file`，规则集会持久化，某次下载失败也不会导致启动失败。
+
+push 新规则后，客户端按 `update_interval` 自动更新，**无需手动操作**。
+`sync-local.sh` 仅在改回私有/本地方案时才需要，公开+远程方案下不用它。
 
 ## 规则集清单
 
