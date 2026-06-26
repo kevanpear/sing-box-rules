@@ -57,3 +57,4 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 - `geosite_openai` — OpenAI / Gemini 及相关 CDN
 - `geosite_youtube` `geosite_spotify` — 流媒体/音乐
 - `geosite_netflix` `geosite_disney` `geosite_primevideo` `geosite_hbo` — 影视
+- `geosite_playstation` — PlayStation / Sony 账号登录及风控域名
