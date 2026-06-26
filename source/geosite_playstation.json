@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "id.sonyentertainmentnetwork.com",
+        "my.account.sony.com",
+        "ca.account.sony.com",
+        "auth.api.sonyentertainmentnetwork.com",
+        "web.np.playstation.com",
+        "reference-data.api.playstation.com",
+        "skw.eve.account.sony.com",
+        "reporting.cdndex.io"
+      ],
+      "domain_suffix": [
+        "online-metrix.net"
+      ]
+    }
+  ]
+}
