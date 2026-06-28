@@ -8,7 +8,8 @@
 |------|------|------|
 | `source/*.json` | 规则**源码**（域名列表） | **要改规则改这里** |
 | `srs/*.srs` | 编译后的二进制 | sing-box 实际加载的；由 CI 自动生成，勿手改 |
-| `.github/workflows/compile.yml` | GitHub Action | push `source/` 后自动把 json 编译成 srs 并提交 |
+| `scripts/check_conflicts.py` | 冲突检查 | 列出 `geosite_direct` 与代理类规则集的同域名重叠（warn-only） |
+| `.github/workflows/compile.yml` | GitHub Action | push `source/` 自动编译 srs 并提交；PR 只校验（JSON 语法 + 编译 + 冲突）不提交 |
 
 ## 如何维护规则
 
@@ -26,8 +27,6 @@ sing-box rule-set compile source/geosite_openai.json -o srs/geosite_openai.srs
 
 改完 `source/*.json` → push → GitHub Action 自动编译出新 `srs/*.srs` →
 客户端按 `update_interval`（默认 1d）自动拉取。整个过程无需在本机手动操作。
-
-> `sync-local.sh` 是私有/本地方案的遗留脚本，公开+远程方案下不需要它。
 
 ## 客户端引用方式（sing-box 配置 route.rule_set）
 
@@ -48,7 +47,6 @@ sing-box rule-set compile source/geosite_openai.json -o srs/geosite_openai.srs
 - 建议同时启用 `experimental.cache_file`，规则集会持久化，某次下载失败也不会导致启动失败。
 
 push 新规则后，客户端按 `update_interval` 自动更新，**无需手动操作**。
-`sync-local.sh` 仅在改回私有/本地方案时才需要，公开+远程方案下不用它。
 
 ## 规则集清单
 
