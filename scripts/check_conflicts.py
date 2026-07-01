@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""跨规则集冲突检查 (warn-only)。
+"""跨规则集冲突检查。
 
 直连大盘 geosite_direct 与所有走代理的规则集之间，若出现同一个
 domain / domain_suffix 同时被列入，路由结果会依赖规则顺序，容易出诡异
-bug。这里把这类重叠列出来，只告警、不让 CI 失败 —— 给人看的提醒。
+bug。默认只告警；CI 使用 --strict 将重叠视为失败。
 
-用法: python3 scripts/check_conflicts.py
+用法: python3 scripts/check_conflicts.py [--strict]
 """
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -29,7 +30,18 @@ def load_terms(path: Path):
     return terms
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="return a non-zero status when conflicts are found",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     files = sorted(SRC.glob("geosite_*.json"))
     direct_path = SRC / f"{DIRECT}.json"
     if not direct_path.exists():
@@ -53,7 +65,7 @@ def main():
         print("[ok] 无跨表域名冲突")
     else:
         print(f"[warn] 共发现 {total} 处直连/代理重叠 —— 请确认路由顺序符合预期")
-    return 0  # warn-only: 永不让 CI 失败
+    return 1 if total and args.strict else 0
 
 
 if __name__ == "__main__":

@@ -1,0 +1,63 @@
+name: Sync proxy rule-set
+
+on:
+  schedule:
+    - cron: "20 2 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_large_change:
+        description: "Allow an upstream change larger than the 5% safety limit"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-proxy-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sing-box
+        run: |
+          curl -fsSL https://sing-box.app/install.sh -o install.sh
+          sudo bash install.sh
+          sing-box version
+
+      - name: Convert upstream GFWList
+        env:
+          ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change || 'false' }}
+        run: |
+          args=()
+          if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
+            args+=(--allow-large-change)
+          fi
+          python3 scripts/update_proxy_from_gfwlist.py "${args[@]}"
+
+      - name: Validate generated rules
+        run: |
+          python3 -m json.tool source/geosite_proxy.json >/dev/null
+          python3 scripts/check_conflicts.py --strict
+          sing-box rule-set compile \
+            source/geosite_proxy.json \
+            -o srs/geosite_proxy.srs
+          git diff --check
+
+      - name: Commit updated source and SRS
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add source/geosite_proxy.json srs/geosite_proxy.srs
+          if git diff --staged --quiet; then
+            echo "upstream rules are unchanged"
+          else
+            git commit -m "ci: sync geosite_proxy from upstream [skip ci]"
+            git push
+          fi

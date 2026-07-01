@@ -8,8 +8,10 @@
 |------|------|------|
 | `source/*.json` | 规则**源码**（域名列表） | **要改规则改这里** |
 | `srs/*.srs` | 编译后的二进制 | sing-box 实际加载的；由 CI 自动生成，勿手改 |
-| `scripts/check_conflicts.py` | 冲突检查 | 列出 `geosite_direct` 与代理类规则集的同域名重叠（warn-only） |
+| `scripts/check_conflicts.py` | 冲突检查 | 检查 `geosite_direct` 与代理类规则集的同域名重叠 |
+| `scripts/update_proxy_from_gfwlist.py` | GFWList 转换 | Base64 AutoProxy → sing-box JSON，并排除 direct 重叠 |
 | `.github/workflows/compile.yml` | GitHub Action | push `source/` 自动编译 srs 并提交；PR 只校验（JSON 语法 + 编译 + 冲突）不提交 |
+| `.github/workflows/sync-proxy.yml` | GitHub Action | 每日同步上游 GFWList，校验后提交 JSON 与 SRS |
 
 ## 如何维护规则
 
@@ -21,6 +23,27 @@
 本地也可手动编译验证：
 ```bash
 sing-box rule-set compile source/geosite_openai.json -o srs/geosite_openai.srs
+```
+
+## geosite_proxy 自动同步
+
+`geosite_proxy` 由
+`YW5vbnltb3Vz/domain-list-community` 的 release 分支 `gfwlist.txt`
+自动转换。GitHub Actions 每天 02:20 UTC 检查一次：
+
+1. 下载并严格解码 Base64 AutoProxy 列表；
+2. 转换 `domain` / `full` / `keyword` / `regexp` 规则；
+3. 去重、排序，并排除 `geosite_direct` 已存在的精确条目；
+4. 执行 JSON、跨表冲突和 sing-box 编译校验；
+5. 仅在规则变化时提交 `source/geosite_proxy.json` 与对应 SRS。
+
+默认安全阈值为 5%。若单次增删总量超过旧规则数的 5%，工作流会失败，
+必须人工审核后通过 `workflow_dispatch` 勾选 `allow_large_change` 才能发布。
+
+本地预览：
+
+```bash
+python3 scripts/update_proxy_from_gfwlist.py --dry-run
 ```
 
 ## 更新流程（公开+远程方案）

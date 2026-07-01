@@ -42,8 +42,8 @@ jobs:
             echo "compiled $name"
           done
 
-      - name: Check cross-list conflicts (warn-only)
-        run: python3 scripts/check_conflicts.py
+      - name: Check cross-list conflicts
+        run: python3 scripts/check_conflicts.py --strict
 
       # PR 只做校验，不提交；只有 push / 手动触发才回写编译产物
       - name: Commit compiled rule-sets
