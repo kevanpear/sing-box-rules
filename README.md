@@ -75,7 +75,8 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 
 - `geosite_direct` — 直连域名
 - `geosite_proxy` — 走代理域名
-- `geosite_openai` — OpenAI / Gemini 及相关 CDN
+- `geosite_openai` — OpenAI 及相关 CDN
+- `geosite_google-gemini` — Google Gemini / NotebookLM / AI Studio 相关域名
 - `geosite_claude` — Anthropic / Claude 及相关内容域名
 - `geosite_youtube` `geosite_spotify` — 流媒体/音乐
 - `geosite_netflix` `geosite_disney` `geosite_primevideo` `geosite_hbo` — 影视
