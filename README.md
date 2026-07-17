@@ -77,7 +77,7 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 - `geosite_proxy` — 走代理域名
 - `geosite_openai` — OpenAI 及相关 CDN
 - `geosite_google` — v2fly `domain-list-community/data/google` 转换的完整 Google 域名集（排除 `@cn`）
-- `geosite_google-gemini` — Google Gemini / NotebookLM / AI Studio 相关域名
+- `geosite_google-gemini` — Google Gemini 所需域名
 - `geosite_claude` — Anthropic / Claude 全量兼容规则集
 - `geosite_claude_dns` — 当前由解锁 DNS 覆盖的 Anthropic / Claude 域名
 - `geosite_claude_warp` — 当前未被解锁 DNS 覆盖、用于 WARP 兜底的 Claude 域名
