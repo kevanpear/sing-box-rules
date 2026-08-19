@@ -81,6 +81,6 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 - `geosite_claude` — Anthropic / Claude 全量兼容规则集
 - `geosite_claude_dns` — 当前由解锁 DNS 覆盖的 Anthropic / Claude 域名
 - `geosite_claude_warp` — 当前未被解锁 DNS 覆盖、用于 WARP 兜底的 Claude 域名
-- `geosite_youtube` `geosite_spotify` — 流媒体/音乐
+- `geosite_youtube` `geosite_spotify` `geosite_tiktok` — 流媒体/音乐/短视频
 - `geosite_netflix` `geosite_disney` `geosite_primevideo` `geosite_hbo` — 影视
 - `geosite_playstation` — PlayStation / Sony 账号登录及风控域名
