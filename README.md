@@ -8,7 +8,8 @@
 |------|------|------|
 | `source/*.json` | 规则**源码**（域名列表） | **要改规则改这里** |
 | `srs/*.srs` | 编译后的二进制 | sing-box 实际加载的；由 CI 自动生成，勿手改 |
-| `scripts/check_conflicts.py` | 冲突检查 | 检查 `geosite_direct` 与代理类规则集的同域名重叠 |
+| `scripts/check_conflicts.py` | 冲突检查 | 检查 `geosite_direct` 与代理类规则集的同域名重叠（只扫 `geosite_*.json`，IP 规则集不适用） |
+| `scripts/update_geoip_cn.py` | 中国大陆 IP 段同步 | 拉取 IPv4/IPv6 CIDR 生成 `source/geoip_cn.json`，内置 5% 变动阈值 |
 | `scripts/update_proxy_from_gfwlist.py` | GFWList 转换 | Base64 AutoProxy → sing-box JSON，并排除 direct 重叠 |
 | `.github/workflows/compile.yml` | GitHub Action | push `source/` 自动编译 srs 并提交；PR 只校验（JSON 语法 + 编译 + 冲突）不提交 |
 | `.github/workflows/sync-proxy.yml` | GitHub Action | 每日同步上游 GFWList，校验后提交 JSON 与 SRS |
@@ -84,3 +85,23 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 - `geosite_youtube` `geosite_spotify` `geosite_tiktok` — 流媒体/音乐/短视频
 - `geosite_netflix` `geosite_disney` `geosite_primevideo` `geosite_hbo` — 影视
 - `geosite_playstation` — PlayStation / Sony 账号登录及风控域名
+- `geoip_cn` — **中国大陆 IP 段（IPv4 + IPv6）**，唯一的非域名规则集
+
+### geoip_cn 为什么必要
+
+其余规则集全是 geosite（域名匹配）。但**不带域名、直接以 IP 发起的连接**
+（游戏、P2P、部分 App 的直连 API）匹配不到任何 geosite 规则，会一路落到
+路由表的 `final`。若 `final` 是代理，国内 IP 的流量就会绕道境外——
+在只服务本机的场景不明显，一旦用作**全网透明代理（旁路由）**就会被放大。
+
+用法：放在所有域名规则之后、`final` 之前，命中即 `direct`。
+
+```json
+{ "rule_set": ["geoip_cn"], "outbound": "direct" }
+```
+
+命名用 `geoip_` 而非 `geosite_` 前缀是有意的：`check_conflicts.py` 只扫描
+`geosite_*.json` 做域名重叠检查，IP 规则集不适用该检查，换前缀即天然跳过。
+
+更新：`python3 scripts/update_geoip_cn.py --proxy http://127.0.0.1:7890`
+（数据源 17mon/china_ip_list 与 gaoyifan/china-operator-ip）
