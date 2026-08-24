@@ -1,8 +1,8 @@
 name: Sync proxy rule-set
 
+# 定时同步已并入 sync-upstream.yml（那里能保证 direct -> 小列表 -> proxy
+# 的依赖顺序）。这里只保留手动入口，供单独重跑 proxy 用。
 on:
-  schedule:
-    - cron: "20 2 * * *"
   workflow_dispatch:
     inputs:
       allow_large_change:

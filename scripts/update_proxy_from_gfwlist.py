@@ -5,8 +5,11 @@ The upstream file is Base64-encoded.  Domain anchors become domain_suffix
 rules, URL anchors become exact domain rules, plain entries become
 domain_keyword rules, and regular expressions are preserved.
 
-Exact terms already present in geosite_direct are removed so the generated
-proxy list cannot reintroduce direct/proxy conflicts.
+Exact terms already present in any direct-semantics rule-set (geosite_direct
+plus the small curated lists in rulesets.DIRECT_LIKE, e.g. geosite_win_update)
+are removed so the generated proxy list cannot reintroduce direct/proxy
+conflicts.  GFWList is coarse and does over-collect -- windowsupdate.com is in
+it -- so the curated direct lists must win.
 """
 
 import argparse
@@ -20,6 +23,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from urllib.parse import urlsplit
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rulesets as R
 
 
 PRIMARY_URL = (
@@ -253,12 +259,13 @@ def main():
 
     raw = fetch(dict.fromkeys((args.source, args.fallback)))
     rules, metadata = parse_rules(decode_autoproxy(raw))
-    direct_terms = load_rule_terms(args.direct)
+    direct_terms = load_rule_terms(args.direct) | R.direct_like_terms()
     before_filter = len(rules["domain"]) + len(rules["domain_suffix"])
     rules["domain"] -= direct_terms
     rules["domain_suffix"] -= direct_terms
     filtered = before_filter - len(rules["domain"]) - len(rules["domain_suffix"])
-    print("[filter] removed {} exact terms already present in direct".format(filtered))
+    print("[filter] removed {} exact terms already present in direct-semantics rule-sets"
+          .format(filtered))
     for line in metadata:
         if line.startswith("! Last Modified:"):
             print("[source]{}".format(line[1:]))

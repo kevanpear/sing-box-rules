@@ -1,70 +1,59 @@
 #!/usr/bin/env python3
 """跨规则集冲突检查。
 
-直连大盘 geosite_direct 与所有走代理的规则集之间，若出现同一个
-domain / domain_suffix 同时被列入，路由结果会依赖规则顺序，容易出诡异
-bug。默认只告警；CI 使用 --strict 将重叠视为失败。
+直连大盘 geosite_direct 与走代理的规则集之间，若同一个 domain /
+domain_suffix 两边都有，路由结果就取决于规则顺序，容易出诡异 bug。
+默认只告警；CI 用 --strict 把重叠视为失败。
+
+只检查【代理语义】的规则集。直连语义的小列表（geosite_apple_cn、
+geosite_win_update 等）与 direct 重叠是天经地义的 —— 它们本来就是
+direct 的子集，拆出来只为能单独调度；拦截语义的 geosite_win_spy /
+geosite_win_extra 命中即断，压过直连也是期望行为。这份名单见
+rulesets.NON_PROXY。
+
+IP 规则集（geoip_*）不做域名重叠检查，前缀不同天然跳过。
 
 用法: python3 scripts/check_conflicts.py [--strict]
 """
 import argparse
-import json
 import sys
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parent.parent / "source"
-DIRECT = "geosite_direct"
-
-
-def load_terms(path: Path):
-    """返回该规则集里的精确域名集合 (domain + domain_suffix)。"""
-    data = json.loads(path.read_text(encoding="utf-8"))
-    terms = set()
-    for rule in data.get("rules", []):
-        for key in ("domain", "domain_suffix"):
-            v = rule.get(key)
-            if isinstance(v, str):
-                terms.add(v)
-            elif isinstance(v, list):
-                terms.update(v)
-    return terms
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rulesets as R
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="return a non-zero status when conflicts are found",
-    )
+    parser.add_argument("--strict", action="store_true",
+                        help="发现重叠时返回非零状态")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    files = sorted(SRC.glob("geosite_*.json"))
-    direct_path = SRC / f"{DIRECT}.json"
+    direct_path = R.SRC / "{}.json".format(R.DIRECT)
     if not direct_path.exists():
-        print(f"[skip] 找不到 {direct_path}")
+        print("[skip] 找不到 {}".format(direct_path))
         return 0
 
-    direct_terms = load_terms(direct_path)
+    direct_terms = R.load_terms(direct_path)
     total = 0
-    for f in files:
-        name = f.stem
-        if name == DIRECT:
-            continue
-        overlap = direct_terms & load_terms(f)
+    for path in R.proxy_rulesets():
+        overlap = direct_terms & R.load_terms(path)
         if overlap:
             total += len(overlap)
-            print(f"::warning::{DIRECT} 与 {name} 重叠 {len(overlap)} 个域名: "
-                  + ", ".join(sorted(overlap)[:20])
-                  + (" ..." if len(overlap) > 20 else ""))
+            print("::warning::{} 与 {} 重叠 {} 个域名: ".format(
+                R.DIRECT, path.stem, len(overlap))
+                + ", ".join(sorted(overlap)[:20])
+                + (" ..." if len(overlap) > 20 else ""))
 
+    skipped = sorted(R.NON_PROXY - {R.DIRECT})
+    print("[info] 已跳过 {} 个非代理语义规则集: {}".format(len(skipped), ", ".join(skipped)))
     if total == 0:
         print("[ok] 无跨表域名冲突")
     else:
-        print(f"[warn] 共发现 {total} 处直连/代理重叠 —— 请确认路由顺序符合预期")
+        print("[warn] 共发现 {} 处直连/代理重叠 —— 请确认路由顺序符合预期".format(total))
     return 1 if total and args.strict else 0
 
 

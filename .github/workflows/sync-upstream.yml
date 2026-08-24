@@ -1,0 +1,79 @@
+name: Sync upstream lists
+
+# 上游同步的唯一定时入口。三个同步之间有依赖，必须按序跑在同一个 job 里：
+#   1. geosite_direct  —— 直连大盘，其它同步都要拿它做剔除基准
+#   2. 小列表（apple_cn / google_cn / win_*）—— 剔除精细代理规则集已有的域名
+#   3. geosite_proxy   —— 反过来剔除上面所有直连语义规则集已有的域名
+# 顺序颠倒会留下 direct/proxy 重叠，末尾的 check_conflicts --strict 就会失败。
+
+on:
+  schedule:
+    - cron: "20 2 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_large_change:
+        description: "Allow an upstream change larger than the safety limit"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install sing-box
+        run: |
+          curl -fsSL https://sing-box.app/install.sh -o install.sh
+          sudo bash install.sh
+          sing-box version
+
+      - name: Sync upstream rule-sets
+        env:
+          ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change || 'false' }}
+        run: |
+          args=()
+          if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
+            args+=(--allow-large-change)
+          fi
+          python3 scripts/update_direct_from_upstream.py "${args[@]}"
+          python3 scripts/update_upstream_lists.py "${args[@]}"
+          python3 scripts/update_proxy_from_gfwlist.py "${args[@]}"
+
+      - name: Recompile changed rule-sets
+        run: |
+          for f in source/*.json; do
+            name="$(basename "$f" .json)"
+            sing-box rule-set compile "$f" -o "srs/$name.srs" \
+              || { echo "::error file=$f::规则编译失败"; exit 1; }
+          done
+
+      - name: Validate
+        run: |
+          for f in source/*.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" \
+              || { echo "::error file=$f::JSON 语法错误"; exit 1; }
+          done
+          python3 scripts/check_conflicts.py --strict
+          git diff --check
+
+      - name: Commit updated rule-sets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add source/ srs/
+          if git diff --staged --quiet; then
+            echo "upstream rules are unchanged"
+          else
+            git commit -m "ci: sync upstream rule-sets [skip ci]"
+            git push
+          fi
