@@ -1,0 +1,59 @@
+name: Sync geoip_cn
+
+# 国内 IP 段变动很慢，不设定时任务；需要刷新时手动触发。
+on:
+  workflow_dispatch:
+    inputs:
+      allow_large_change:
+        description: "Allow a change larger than the 5% safety limit"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-geoip-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install sing-box
+        run: |
+          curl -fsSL https://sing-box.app/install.sh -o install.sh
+          sudo bash install.sh
+          sing-box version
+
+      - name: Refresh china IP ranges
+        env:
+          ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change || 'false' }}
+        run: |
+          args=()
+          if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
+            args+=(--allow-large-change)
+          fi
+          python3 scripts/update_geoip_cn.py "${args[@]}"
+
+      - name: Validate generated rules
+        run: |
+          python3 -m json.tool source/geoip_cn.json >/dev/null
+          sing-box rule-set compile source/geoip_cn.json -o srs/geoip_cn.srs
+          git diff --check
+
+      - name: Commit updated source and SRS
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add source/geoip_cn.json srs/geoip_cn.srs
+          if git diff --staged --quiet; then
+            echo "geoip_cn is unchanged"
+          else
+            git commit -m "ci: sync geoip_cn from upstream [skip ci]"
+            git push
+          fi
