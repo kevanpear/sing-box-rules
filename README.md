@@ -94,14 +94,11 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 
 直连语义（`geosite_direct` 的子集，拆出来只为能单独调度）：
 
-- `geosite_apple_cn` — 国内可直连的 Apple 域名（160 条）
-- `geosite_google_cn` — 国内可直连的 Google 域名（111 条）
 - `geosite_win_update` — Windows 更新域名（538 条），动辄几 GB，不该吃代理流量
 
 拦截语义（命中即断，需要客户端配一条 `action: reject`）：
 
 - `geosite_win_spy` — Windows 遥测域名（347 条）
-- `geosite_win_extra` — Windows 附加遥测域名（399 条）
 
 ### geoip_cn 为什么必要
 
@@ -138,7 +135,7 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 
 - **精细代理规则集**（`geosite_openai` 等人工维护的）压过直连列表。
   例：`itunes.apple.com` 有意留在 `geosite_openai` 里走代理（ChatGPT 的
-  Apple 登录），所以它会被从 `geosite_direct` 和 `geosite_apple_cn` 里剔除。
+  Apple 登录），所以它会被从 `geosite_direct` 里剔除。
   2026-07-01 的 21f3422 手工做的就是这件事，现在自动化了。
 - **`geosite_proxy` 大盘不压过任何直连列表**。GFWList 粒度粗且会误收
   —— `windowsupdate.com` 就在里面。拿大盘去剔除直连条目，会把该直连的
@@ -156,8 +153,8 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 
 ```json
 "rules": [
-  { "rule_set": ["geosite_win_spy", "geosite_win_extra"], "action": "reject" },
-  { "rule_set": ["geosite_win_update", "geosite_apple_cn", "geosite_google_cn"], "outbound": "direct" },
+  { "rule_set": ["geosite_reject"], "action": "reject" },
+  { "rule_set": ["geosite_win_update"], "outbound": "direct" },
   { "rule_set": ["geosite_openai", "geosite_claude", "geosite_google"], "outbound": "proxy" },
   { "rule_set": ["geosite_direct"], "outbound": "direct" },
   { "rule_set": ["geosite_proxy"], "outbound": "proxy" },

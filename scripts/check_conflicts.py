@@ -5,10 +5,10 @@
 domain_suffix 两边都有，路由结果就取决于规则顺序，容易出诡异 bug。
 默认只告警；CI 用 --strict 把重叠视为失败。
 
-只检查【代理语义】的规则集。直连语义的小列表（geosite_apple_cn、
+只检查【代理语义】的规则集。直连语义的小列表（geosite_win_update 等）
 geosite_win_update 等）与 direct 重叠是天经地义的 —— 它们本来就是
 direct 的子集，拆出来只为能单独调度；拦截语义的 geosite_win_spy /
-geosite_win_extra 命中即断，压过直连也是期望行为。这份名单见
+geosite_win_spy 命中即断，压过直连也是期望行为。这份名单见
 rulesets.NON_PROXY。
 
 IP 规则集（geoip_*）不做域名重叠检查，前缀不同天然跳过。

@@ -2,7 +2,7 @@ name: Sync upstream lists
 
 # 上游同步的唯一定时入口。三个同步之间有依赖，必须按序跑在同一个 job 里：
 #   1. geosite_direct  —— 直连大盘，其它同步都要拿它做剔除基准
-#   2. 小列表（apple_cn / google_cn / win_*）—— 剔除精细代理规则集已有的域名
+#   2. 小列表（win_update / win_spy / reject）—— 剔除精细代理规则集已有的域名
 #   3. geosite_proxy   —— 反过来剔除上面所有直连语义规则集已有的域名
 # 顺序颠倒会留下 direct/proxy 重叠，末尾的 check_conflicts --strict 就会失败。
 

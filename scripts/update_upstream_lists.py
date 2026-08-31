@@ -2,22 +2,18 @@
 """同步 Loyalsoldier/v2ray-rules-dat 的几个小规则集。
 
 这些列表都很小（几百条），但各自解决一个具体问题：
-
-  geosite_apple_cn    国内可直连的 Apple 域名 —— 走代理纯属绕远
-  geosite_google_cn   国内可直连的 Google 域名（google.cn 等）
   geosite_win_update  Windows 更新域名 —— 动辄几个 GB，不该吃代理流量
   geosite_win_spy     Windows 遥测域名 —— 用于拦截
-  geosite_win_extra   Windows 附加遥测域名 —— 用于拦截
   geosite_reject      广告/追踪域名（上游 reject-list）—— 用于拦截
 
 直连语义的三个（见 rulesets.DIRECT_LIKE）会剔除【精细代理规则集】已有的域名，
 否则会把有意让其走代理的域名拉回直连 —— 典型例子是 geosite_openai 里的
 Apple 登录域名，apple-cn 若不剔除就会盖掉它。
 
-拦截语义的两个（win_spy / win_extra）不做剔除：命中即断，压过直连是期望行为。
+拦截语义的 win_spy 不做剔除：命中即断，压过直连是期望行为。
 
 用法:
-  python3 scripts/update_upstream_lists.py [--only geosite_apple_cn] [--dry-run]
+  python3 scripts/update_upstream_lists.py [--only geosite_reject] [--dry-run]
 """
 import argparse
 import sys
@@ -31,11 +27,8 @@ BASE_CDN = "https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release"
 
 # 规则集名 -> (上游文件名, 生成结果的规则数下限)
 LISTS = {
-    "geosite_apple_cn":   ("apple-cn", 100),
-    "geosite_google_cn":  ("google-cn", 50),
     "geosite_win_update": ("win-update", 300),
     "geosite_win_spy":    ("win-spy", 200),
-    "geosite_win_extra":  ("win-extra", 200),
     # 去广告：上游 reject-list 约 18.8 万条，下限取 10 万——低于此值几乎肯定是
     # 上游异常（文件截断/为空），宁可同步失败也不要发布一个残缺的拦截清单。
     "geosite_reject":     ("reject-list", 100000),

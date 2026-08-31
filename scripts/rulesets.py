@@ -24,19 +24,14 @@ DIRECT = "geosite_direct"
 # 忘了登记也不会漏检）；只有确实不是代理语义的才列在这里。
 NON_PROXY = frozenset({
     DIRECT,               # 直连大盘本身
-    "geosite_apple_cn",   # 直连：国内可直连的 Apple 域名
-    "geosite_google_cn",  # 直连：国内可直连的 Google 域名
     "geosite_win_update",  # 直连：Windows 更新，走代理纯属浪费流量
     "geosite_win_spy",    # 拦截：Windows 遥测，命中即断，压过直连是期望行为
-    "geosite_win_extra",  # 拦截：同上
     "geosite_reject",     # 拦截：广告/追踪，命中即断，压过直连是期望行为
 })
 
 # 直连语义的小列表：生成时要剔除代理类规则集已有的条目，
 # 否则会把有意让其走代理的域名（如 ChatGPT 用的 Apple 登录）拉回直连。
 DIRECT_LIKE = frozenset({
-    "geosite_apple_cn",
-    "geosite_google_cn",
     "geosite_win_update",
 })
 
