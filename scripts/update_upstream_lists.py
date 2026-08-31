@@ -8,6 +8,7 @@
   geosite_win_update  Windows 更新域名 —— 动辄几个 GB，不该吃代理流量
   geosite_win_spy     Windows 遥测域名 —— 用于拦截
   geosite_win_extra   Windows 附加遥测域名 —— 用于拦截
+  geosite_reject      广告/追踪域名（上游 reject-list）—— 用于拦截
 
 直连语义的三个（见 rulesets.DIRECT_LIKE）会剔除【精细代理规则集】已有的域名，
 否则会把有意让其走代理的域名拉回直连 —— 典型例子是 geosite_openai 里的
@@ -35,6 +36,9 @@ LISTS = {
     "geosite_win_update": ("win-update", 300),
     "geosite_win_spy":    ("win-spy", 200),
     "geosite_win_extra":  ("win-extra", 200),
+    # 去广告：上游 reject-list 约 18.8 万条，下限取 10 万——低于此值几乎肯定是
+    # 上游异常（文件截断/为空），宁可同步失败也不要发布一个残缺的拦截清单。
+    "geosite_reject":     ("reject-list", 100000),
 }
 
 

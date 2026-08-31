@@ -29,6 +29,7 @@ NON_PROXY = frozenset({
     "geosite_win_update",  # 直连：Windows 更新，走代理纯属浪费流量
     "geosite_win_spy",    # 拦截：Windows 遥测，命中即断，压过直连是期望行为
     "geosite_win_extra",  # 拦截：同上
+    "geosite_reject",     # 拦截：广告/追踪，命中即断，压过直连是期望行为
 })
 
 # 直连语义的小列表：生成时要剔除代理类规则集已有的条目，
