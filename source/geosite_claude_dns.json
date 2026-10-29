@@ -4,7 +4,8 @@
     {
       "domain_suffix": [
         "anthropic.com",
-        "claude.ai"
+        "claude.ai",
+        "claude.com"
       ]
     }
   ]
