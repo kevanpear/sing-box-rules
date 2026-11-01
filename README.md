@@ -10,6 +10,7 @@
 | `srs/*.srs` | 编译后的二进制 | sing-box 实际加载的；由 CI 自动生成，勿手改 |
 | `scripts/rulesets.py` | 共用模块 | 规则集分类（代理 / 直连 / 拦截）、上游列表解析、原子写入、安全阈值 |
 | `scripts/check_conflicts.py` | 冲突检查 | 只查 `geosite_direct` 与**代理语义**规则集的重叠；直连/拦截语义的按 `rulesets.NON_PROXY` 跳过 |
+| `scripts/check_ai_cn.py` | 中国 AI 清单检查与镜像 | 验证独立直连组边界，生成／检查 Clash classical 镜像 |
 | `scripts/update_direct_from_upstream.py` | 直连大盘同步 | Loyalsoldier `direct-list.txt` → `geosite_direct`，剔除精细代理规则集已有域名 |
 | `scripts/update_upstream_lists.py` | 小列表同步 | apple-cn / google-cn / win-update / win-spy / win-extra 五个规则集 |
 | `scripts/update_geoip_cn.py` | 中国大陆 IP 段同步 | 拉取 IPv4/IPv6 CIDR 生成 `source/geoip_cn.json`，内置 5% 变动阈值 |
@@ -92,9 +93,10 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 - `geosite_playstation` — PlayStation / Sony 账号登录及风控域名
 - `geoip_cn` — **中国大陆 IP 段（IPv4 + IPv6）**，唯一的非域名规则集
 
-直连语义（`geosite_direct` 的子集，拆出来只为能单独调度）：
+直连语义（可与`geosite_direct`重叠，独立列出以便单独调度）：
 
 - `geosite_win_update` — Windows 更新域名（538 条），动辄几 GB，不该吃代理流量
+- `geosite_ai_cn` — 中国 AI 服务域名，适合在全局代理兜底前单独直连；不改直连大盘或国外 AI 分组
 
 拦截语义（命中即断，需要客户端配一条 `action: reject`）：
 
@@ -154,6 +156,7 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 ```json
 "rules": [
   { "rule_set": ["geosite_reject"], "action": "reject" },
+  { "rule_set": ["geosite_ai_cn"], "outbound": "direct" },
   { "rule_set": ["geosite_win_update"], "outbound": "direct" },
   { "rule_set": ["geosite_openai", "geosite_claude", "geosite_google"], "outbound": "proxy" },
   { "rule_set": ["geosite_direct"], "outbound": "direct" },
@@ -165,3 +168,28 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 拦截类放最前（命中即断），直连小列表次之（它们是 `geosite_direct` 的子集，
 放前面才有单独调度的意义），精细代理规则集再次之，两个大盘垫底，
 `geoip_cn` 在 `final` 之前兜底。
+
+## 中国 AI 服务分组
+
+唯一域名编辑点：`source/geosite_ai_cn.json`。使用原生规则集格式，不另建第二份厂商目录。四个规则块依次对应下表；当前共13条精确／后缀条目：
+
+| 厂商 | 覆盖范围 | 资料 |
+|---|---|---|
+| DeepSeek | deepseek.com，含API及官方客户端服务 | [官方API文档](https://api-docs.deepseek.com/) |
+| 火山方舟 | 精确ark.cn-beijing.volces.com；通过方舟调用的GLM、DeepSeek、Kimi、豆包、MiniMax共用该主机 | [官方Coding Plan文档](https://console.volcengine.com/ark/region%3Acn-beijing/docs/coding-plan-personal-get-started) |
+| Kimi／Moonshot | kimi.com、kimi.ai、moonshot.cn、moonshot.ai，含API、OAuth、更新、CDN和远程控制 | [官方文档](https://www.kimi.com/code/docs/en/)、[地区端点源码](https://github.com/MoonshotAI/kimi-code/blob/main/packages/oauth/src/region.ts)、[开放平台源码](https://github.com/MoonshotAI/kimi-code/blob/main/packages/oauth/src/open-platform.ts) |
+| 小米MiMo | xiaomimimo.com、mimo.mi.com、mimo.xiaomi.com；账号、隐私与已核实资源只列精确主机 | [官方API文档](https://mimo.mi.com/docs/zh-CN/quick-start/summary/first-api-call)、[官网](https://mimo.xiaomi.com/) |
+
+直连表示使用客户端配置的本地出口，不保证服务端地理位置。规则只提供匹配范围，DNS、出站、来源条件及广告拒绝顺序由设备配置决定；需要直连时，DNS和数据规则均引用本组，并放在全局兜底前。Kimi国内／国际主机都覆盖，但不修改客户端的区域或Base URL。模型访问的任意网页、MCP、GitHub不会因此一起直连。
+
+该组登记为`NON_PROXY`和`DIRECT_LIKE`，不会被误当代理类从直连大盘剔除；GFWList同步也会排除其精确条目。与`geosite_direct`重叠是正常现象，无需把这些域名搬出大盘。新增时核实域名归属，不加入IP、关键词、正则或宽泛共享云父域。
+
+```sh
+python3.11 scripts/check_ai_cn.py
+python3.11 -m unittest discover -s tests -p 'test_ai_cn.py'
+# 在本项目运行，机械生成姊妹仓库镜像；只改本项目的source源文件。
+python3.11 scripts/check_ai_cn.py --write-clash ../clash-rules/source/geosite_ai_cn.yaml
+python3.11 scripts/check_ai_cn.py --check-clash ../clash-rules/source/geosite_ai_cn.yaml
+```
+
+检查器拦截重复／重叠、部分常见共享父域和受保护的国外AI域名；不代替新增厂商的归属审查。push后由CI生成SRS，Clash按自己的CI生成YAML／MRS，本地编译验证放临时目录、不提交产物。设备若使用受保护的本地副本，须按其投放流程同步，发布共享仓库不会自动改写它。

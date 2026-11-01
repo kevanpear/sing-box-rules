@@ -24,6 +24,7 @@ DIRECT = "geosite_direct"
 # 忘了登记也不会漏检）；只有确实不是代理语义的才列在这里。
 NON_PROXY = frozenset({
     DIRECT,               # 直连大盘本身
+    "geosite_ai_cn",       # 直连：中国 AI 服务，供全局代理场景单独调度
     "geosite_win_update",  # 直连：Windows 更新，走代理纯属浪费流量
     "geosite_win_spy",    # 拦截：Windows 遥测，命中即断，压过直连是期望行为
     "geosite_reject",     # 拦截：广告/追踪，命中即断，压过直连是期望行为
@@ -32,6 +33,7 @@ NON_PROXY = frozenset({
 # 直连语义的小列表：生成时要剔除代理类规则集已有的条目，
 # 否则会把有意让其走代理的域名（如 ChatGPT 用的 Apple 登录）拉回直连。
 DIRECT_LIKE = frozenset({
+    "geosite_ai_cn",
     "geosite_win_update",
 })
 

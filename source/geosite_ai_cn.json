@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "domain_suffix": [
+        "deepseek.com"
+      ]
+    },
+    {
+      "domain": [
+        "ark.cn-beijing.volces.com"
+      ]
+    },
+    {
+      "domain_suffix": [
+        "kimi.ai",
+        "kimi.com",
+        "moonshot.ai",
+        "moonshot.cn"
+      ]
+    },
+    {
+      "domain": [
+        "account.xiaomi.com",
+        "cdn.cnbj1.fds.api.mi-img.com",
+        "id.mi.com",
+        "privacy.mi.com"
+      ],
+      "domain_suffix": [
+        "mimo.mi.com",
+        "mimo.xiaomi.com",
+        "xiaomimimo.com"
+      ]
+    }
+  ]
+}
