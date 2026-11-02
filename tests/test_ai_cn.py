@@ -31,7 +31,7 @@ class CatalogTests(unittest.TestCase):
                        for rule in rules for kind, domains in rule.items() for domain in domains)
 
         for host in (
-            "api.deepseek.com", "ark.cn-beijing.volces.com", "api.kimi.com",
+            "api.deepseek.com", "files.deepseeksvc.com", "ark.cn-beijing.volces.com", "api.kimi.com",
             "auth.kimi.com", "code.kimi.com", "code-rc.kimi.com", "cdn.kimi.com",
             "telemetry-logs.kimi.com", "api.moonshot.cn", "api.kimi.ai",
             "api.xiaomimimo.com", "token-plan-cn.xiaomimimo.com",
@@ -39,7 +39,7 @@ class CatalogTests(unittest.TestCase):
         ):
             self.assertTrue(allowed(host), host)
         for host in (*module.PROTECTED, "api.anthropic.com", "api.openai.com",
-                     "kimi.com.example.com", "notkimi.com", "foo.volces.com",
+                     "kimi.com.example.com", "deepseeksvc.com.example.com", "notkimi.com", "foo.volces.com",
                      "www.xiaomi.com", "foo.aliyuncs.com", "192.0.2.1"):
             self.assertFalse(allowed(host), host)
 

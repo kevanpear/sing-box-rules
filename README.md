@@ -171,11 +171,11 @@ push 新规则后，客户端按 `update_interval` 自动更新，**无需手动
 
 ## 中国 AI 服务分组
 
-唯一域名编辑点：`source/geosite_ai_cn.json`。使用原生规则集格式，不另建第二份厂商目录。四个规则块依次对应下表；当前共13条精确／后缀条目：
+唯一域名编辑点：`source/geosite_ai_cn.json`。使用原生规则集格式，不另建第二份厂商目录。四个规则块依次对应下表；当前共14条精确／后缀条目：
 
 | 厂商 | 覆盖范围 | 资料 |
 |---|---|---|
-| DeepSeek | deepseek.com，含API及官方客户端服务 | [官方API文档](https://api-docs.deepseek.com/) |
+| DeepSeek | deepseek.com、deepseeksvc.com，含API、聊天网页和文件服务 | [官方API文档](https://api-docs.deepseek.com/)、[官方聊天网页](https://chat.deepseek.com/)加载的[前端脚本](https://fe-static.deepseek.com/chat/static/main.d1d163b7e4.js)明确使用 files.deepseeksvc.com |
 | 火山方舟 | 精确ark.cn-beijing.volces.com；通过方舟调用的GLM、DeepSeek、Kimi、豆包、MiniMax共用该主机 | [官方Coding Plan文档](https://console.volcengine.com/ark/region%3Acn-beijing/docs/coding-plan-personal-get-started) |
 | Kimi／Moonshot | kimi.com、kimi.ai、moonshot.cn、moonshot.ai，含API、OAuth、更新、CDN和远程控制 | [官方文档](https://www.kimi.com/code/docs/en/)、[地区端点源码](https://github.com/MoonshotAI/kimi-code/blob/main/packages/oauth/src/region.ts)、[开放平台源码](https://github.com/MoonshotAI/kimi-code/blob/main/packages/oauth/src/open-platform.ts) |
 | 小米MiMo | xiaomimimo.com、mimo.mi.com、mimo.xiaomi.com；账号、隐私与已核实资源只列精确主机 | [官方API文档](https://mimo.mi.com/docs/zh-CN/quick-start/summary/first-api-call)、[官网](https://mimo.xiaomi.com/) |
